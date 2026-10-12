@@ -1,0 +1,29 @@
+server:
+  port: 18080
+  tomcat:
+    threads:
+      max: 200        # Spring Boot 默认值；压测算术的分母（问题报告 RST-001）
+    accept-count: 100
+
+ai:
+  mode: baseline      # 默认基线：`mvn spring-boot:run` 即复现线程池耗尽；fixed 见 scripts/
+  llm:
+    port: 18081
+    delay-ms: 8000
+    connect-timeout-ms: 3000
+    read-timeout-ms: 12000
+    deferred-result-timeout-ms: 15000
+  pool:
+    core: 8
+    max: 16
+    queue-capacity: 50
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,metrics
+
+logging:
+  level:
+    com.resumeai.stability: INFO
