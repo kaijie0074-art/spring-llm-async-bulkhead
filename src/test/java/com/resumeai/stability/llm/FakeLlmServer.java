@@ -1,12 +1,7 @@
 package com.resumeai.stability.llm;
 
-import com.resumeai.stability.config.AiProperties;
 import com.sun.net.httpserver.HttpServer;
 import jakarta.annotation.PreDestroy;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
 
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
@@ -15,33 +10,31 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
- * 内置 Fake LLM 服务：让应用自包含（CI 无外部依赖即可复现线程池耗尽）。
+ * 测试用 LLM 端点（仅测试源集；生产直连真实 OpenAI 兼容 API）。
  *
  * 端点：
- *   POST /v1/chat/completions —— sleep(ai.llm.delay-ms) 后返回固定 JSON（模拟 5-30s 的 LLM 推理）
+ *   POST /v1/chat/completions —— sleep(delayMs) 后返回固定 JSON（复现慢推理）
  *   GET  /__ctl/fail429       —— 切换为返回 429（压测熔断路径）
  *   GET  /__ctl/ok            —— 恢复正常
  */
-@Component
 public class FakeLlmServer {
 
-    private static final Logger log = LoggerFactory.getLogger(FakeLlmServer.class);
-
-    private final AiProperties props;
+    private final int port;
+    private final long delayMs;
     private HttpServer server;
     private final AtomicBoolean failMode = new AtomicBoolean(false);
     private volatile int boundPort;
 
-    @Autowired
-    public FakeLlmServer(AiProperties props) {
-        this.props = props;
+    public FakeLlmServer(int port, long delayMs) {
+        this.port = port;
+        this.delayMs = delayMs;
         start();
     }
 
     private void start() {
         try {
-            server = HttpServer.create(new InetSocketAddress("127.0.0.1", props.getLlm().getPort()), 50);
-            server.setExecutor(Executors.newVirtualThreadPerTaskExecutor()); // fake 服务不构成瓶颈
+            server = HttpServer.create(new InetSocketAddress("127.0.0.1", port), 50);
+            server.setExecutor(Executors.newVirtualThreadPerTaskExecutor()); // 测试端点不构成瓶颈
             server.createContext("/v1/chat/completions", exchange -> {
                 if (failMode.get()) {
                     byte[] body = "{\"error\":\"rate_limited\"}".getBytes(StandardCharsets.UTF_8);
@@ -51,12 +44,12 @@ public class FakeLlmServer {
                     return;
                 }
                 try {
-                    Thread.sleep(props.getLlm().getDelayMs()); // 模拟慢推理
+                    Thread.sleep(delayMs); // 复现慢推理
                 } catch (InterruptedException ie) {
                     Thread.currentThread().interrupt();
                 }
                 byte[] body = ("{\"choices\":[{\"message\":{\"content\":\"optimized\"}}],\"delay\":"
-                        + props.getLlm().getDelayMs() + "}").getBytes(StandardCharsets.UTF_8);
+                        + delayMs + "}").getBytes(StandardCharsets.UTF_8);
                 exchange.getResponseHeaders().add("Content-Type", "application/json");
                 exchange.sendResponseHeaders(200, body.length);
                 try (OutputStream os = exchange.getResponseBody()) { os.write(body); }
@@ -71,9 +64,8 @@ public class FakeLlmServer {
             });
             server.start();
             boundPort = server.getAddress().getPort();
-            log.info("FakeLlmServer started on 127.0.0.1:{} delay={}ms failMode=false", boundPort, props.getLlm().getDelayMs());
         } catch (Exception e) {
-            throw new IllegalStateException("FakeLlmServer 启动失败", e);
+            throw new IllegalStateException("测试 LLM 端点启动失败", e);
         }
     }
 

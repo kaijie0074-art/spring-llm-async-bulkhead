@@ -9,7 +9,7 @@ public class LoginController {
 
     @GetMapping("/api/login")
     public String login() throws InterruptedException {
-        Thread.sleep(20); // 模拟查库+会话签发的正常耗时
+        Thread.sleep(20); // 查库+会话签发的正常耗时
         return "{\"code\":0,\"msg\":\"ok\"}";
     }
 }

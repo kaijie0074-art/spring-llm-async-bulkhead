@@ -1,8 +1,8 @@
 # spring-llm-async-bulkhead
 
-**同步 LLM 调用 → Tomcat 线程池耗尽 → 全站雪崩**：单代码库双模式（`ai.mode=baseline|fixed`）的可复现修复演练。220 并发实压：登录 P99 从 **4289ms → 366ms**（11.7×），AI 溢出流量从"排队等死"变为 **78ms 快速失败 + Retry-After**。
+**同步 LLM 调用 → Tomcat 线程池耗尽 → 全站雪崩**：单代码库双模式（`ai.mode=baseline|fixed`）的可复现修复。220 并发实压：登录 P99 从 **4289ms → 366ms**（11.7×），AI 溢出流量从"排队等死"变为 **78ms 快速失败 + Retry-After**。
 
-> **演练声明**：内置 FakeLlmServer（本地 HTTP 服务，延迟可配），不调用真实 LLM API；上游项目（Resilience4j/Spring/微信小程序文档）仅作机制引用，见 [docs/open-source-references.md](docs/open-source-references.md)。
+> 直连真实 LLM API（OpenAI 兼容协议，默认智谱，`LLM_BASE_URL`/`LLM_API_KEY`/`LLM_MODEL` 环境变量配置）；集成测试用测试源集内的可控本地端点（延迟可配、可切 429）；上游项目（Resilience4j/Spring/微信小程序文档）仅作机制引用，见 [docs/open-source-references.md](docs/open-source-references.md)。
 
 ## 快速开始
 
@@ -11,13 +11,13 @@
 ```bash
 mvn test                 # 4 集成测试：隔离/饱和复现/超时/熔断全周期
 mvn -DskipTests package
-# 复现雪崩（baseline）
-java -jar target/*.jar --ai.mode=baseline --ai.llm.delay-ms=4000
+# 复现雪崩（baseline，需真实 LLM 凭证）
+export LLM_API_KEY=your-key   # 可选 LLM_BASE_URL/LLM_MODEL
+java -jar target/*.jar --ai.mode=baseline
 python3 loadtest/run.py --optimize 220 --login 4 --duration 25 --label baseline
 # 验证修复（fixed，同参数）
-java -jar target/*.jar --ai.mode=fixed --ai.llm.delay-ms=4000
+java -jar target/*.jar --ai.mode=fixed
 python3 loadtest/run.py --optimize 220 --login 4 --duration 25 --label fixed
-```
 
 ## 修复分层（S0→S2，改动成本递增）
 

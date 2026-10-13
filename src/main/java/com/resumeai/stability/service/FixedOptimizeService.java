@@ -15,7 +15,6 @@ import org.springframework.web.client.RestClientResponseException;
 import org.springframework.web.client.RestTemplate;
 
 import com.resumeai.stability.config.AiProperties;
-import com.resumeai.stability.llm.FakeLlmServer;
 
 import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
@@ -37,17 +36,15 @@ public class FixedOptimizeService {
     private static final Logger log = LoggerFactory.getLogger(FixedOptimizeService.class);
 
     private final RestTemplate restTemplate;
-    private final FakeLlmServer llm;
     private final ThreadPoolTaskExecutor aiExecutor;
     private final AiProperties props;
     private CircuitBreaker circuitBreaker;
 
     @Autowired
-    public FixedOptimizeService(RestTemplate llmRestTemplate, FakeLlmServer llm,
+    public FixedOptimizeService(RestTemplate llmRestTemplate,
                                 @Qualifier("aiExecutor") ThreadPoolTaskExecutor aiExecutor,
                                 AiProperties props) {
         this.restTemplate = llmRestTemplate;
-        this.llm = llm;
         this.aiExecutor = aiExecutor;
         this.props = props;
     }
@@ -97,9 +94,11 @@ public class FixedOptimizeService {
         // OPEN 时抛 CallNotPermittedException（等待期到后自动转 HALF_OPEN）——
         // 不要用 getState() 短路：getState 不触发状态转换，会让熔断器卡死在 OPEN
         try {
-            String body = circuitBreaker.executeSupplier(() ->
-                    restTemplate.postForObject(llm.baseUrl() + "/v1/chat/completions",
-                            "{\"resume_id\":\"" + resumeId + "\"}", String.class));
+            String body = circuitBreaker.executeSupplier(() -> {
+                LlmHttpRequests.ensureConfigured(props);
+                return restTemplate.postForObject(LlmHttpRequests.chatCompletionsUrl(props),
+                        LlmHttpRequests.chatCompletion(props, resumeId), String.class);
+            });
             return OptimizeOutcome.ok(body);
         } catch (io.github.resilience4j.circuitbreaker.CallNotPermittedException e) {
             log.warn("[fixed] breaker OPEN → degraded resumeId={}", resumeId);

@@ -2,7 +2,9 @@ package com.resumeai.stability;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import com.resumeai.stability.config.TestLlmConfig;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.test.context.TestPropertySource;
 
@@ -18,15 +20,15 @@ import static org.junit.jupiter.api.Assertions.*;
         properties = {
                 "server.tomcat.threads.max=8",
                 "ai.mode=baseline",
-                "ai.llm.delay-ms=500",
-                "ai.llm.port=0",
+                "test.llm.delay-ms=500",
         })
 @TestPropertySource(properties = {
         "server.tomcat.threads.max=8",
         "ai.mode=baseline",
-        "ai.llm.delay-ms=500",
-        "ai.llm.port=0",
+        "test.llm.delay-ms=500",
 })
+
+@Import(TestLlmConfig.class)
 class BaselineSaturationTest {
 
     @Autowired TestRestTemplate rest;

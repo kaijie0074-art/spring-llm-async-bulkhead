@@ -1,5 +1,16 @@
 # CHANGELOG
 
+## [1.1.0] - 2026-10-13
+
+移除内置假 LLM 服务，直连真实 API。
+
+- 删除主代码 FakeLlmServer（@Component 自启动内嵌服务）；Baseline/Fixed 服务直连
+  真实 OpenAI 兼容 API（`ai.llm.base-url/api-key/model`，环境变量
+  `LLM_BASE_URL`/`LLM_API_KEY`/`LLM_MODEL`），请求体换 OpenAI chat/completions 协议
+- 无凭证调用真实端点时显式报错并给配置指引
+- 可控本地端点移入测试源集（FakeLlmServer + TestLlmConfig），测试属性
+  `test.llm.delay-ms` 控制延迟，ai.llm.base-url 运行时覆写指向测试端点
+
 ## [1.0.0] - 2026-10-13
 
 合并 PR #1（fix/async-bulkhead → main），负责人验收通过。

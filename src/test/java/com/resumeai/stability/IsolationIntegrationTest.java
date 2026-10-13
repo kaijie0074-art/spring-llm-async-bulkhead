@@ -2,7 +2,9 @@ package com.resumeai.stability;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import com.resumeai.stability.config.TestLlmConfig;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.test.context.TestPropertySource;
@@ -24,10 +26,11 @@ import static org.junit.jupiter.api.Assertions.*;
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @TestPropertySource(properties = {
         "ai.mode=fixed",
-        "ai.llm.delay-ms=300",
-        "ai.llm.port=0",
+        "test.llm.delay-ms=300",
         "ai.pool.core=4", "ai.pool.max=8", "ai.pool.queue-capacity=10",
 })
+
+@Import(TestLlmConfig.class)
 class IsolationIntegrationTest {
 
     @LocalServerPort int port;

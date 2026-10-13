@@ -19,18 +19,21 @@ public class AiProperties {
     private final Pool pool = new Pool();
 
     public static class Llm {
-        /** FakeLlmServer 端口；0=随机端口（测试并发安全）。 */
-        private int port = 18081;
-        /** 单次 LLM 延迟（ms）：默认 8000 对应真实 P50~P95 区间（问题报告 RST-001 算术）。 */
-        private long delayMs = 8000;
+        /** 真实 LLM API（OpenAI 兼容协议）地址。 */
+        private String baseUrl = "https://open.bigmodel.cn/api/paas/v4";
+        /** API 凭证（生产经环境变量 LLM_API_KEY 注入；指向本机测试端点时可空）。 */
+        private String apiKey = "";
+        private String model = "glm-4-flash";
         private int connectTimeoutMs = 3000;
         private int readTimeoutMs = 12000;
         private int deferredResultTimeoutMs = 15000;
 
-        public int getPort() { return port; }
-        public void setPort(int port) { this.port = port; }
-        public long getDelayMs() { return delayMs; }
-        public void setDelayMs(long delayMs) { this.delayMs = delayMs; }
+        public String getBaseUrl() { return baseUrl; }
+        public void setBaseUrl(String v) { this.baseUrl = v; }
+        public String getApiKey() { return apiKey; }
+        public void setApiKey(String v) { this.apiKey = v; }
+        public String getModel() { return model; }
+        public void setModel(String v) { this.model = v; }
         public int getConnectTimeoutMs() { return connectTimeoutMs; }
         public void setConnectTimeoutMs(int v) { this.connectTimeoutMs = v; }
         public int getReadTimeoutMs() { return readTimeoutMs; }

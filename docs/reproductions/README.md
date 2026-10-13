@@ -17,11 +17,12 @@ mvn test
 
 ```bash
 mvn -DskipTests package
-# baseline：220 并发 AI（>200 线程）→ 全站排队
-java -jar target/*.jar --ai.mode=baseline --ai.llm.delay-ms=4000 &
+# baseline：220 并发 AI（>200 线程）→ 全站排队（真实 LLM API，需凭证）
+export LLM_API_KEY=your-key
+java -jar target/*.jar --ai.mode=baseline &
 python3 loadtest/run.py --optimize 220 --login 4 --duration 25 --label baseline --out evidence/loadtest-baseline.md
 # fixed：同参数
-java -jar target/*.jar --ai.mode=fixed --ai.llm.delay-ms=4000 &
+java -jar target/*.jar --ai.mode=fixed &
 python3 loadtest/run.py --optimize 220 --login 4 --duration 25 --label fixed --out evidence/loadtest-fixed.md
 ```
 
@@ -42,6 +43,6 @@ python3 loadtest/run.py --optimize 220 --login 4 --duration 25 --label fixed --o
 
 ## 已知边界
 
-- FakeLlmServer 的 delay 是常数（非真实 LLM 的长尾分布）；P99 长尾形态由 TimeoutTest 的超时上界保证
+- 测试端点（src/test 内 FakeLlmServer）的 delay 是常数（非真实 LLM 的长尾分布）；P99 长尾形态由 TimeoutTest 的超时上界保证；生产直连真实 API（LLM_API_KEY），长尾形态以真实压测为准
 - 压测脚本为 Python 标准库线程模型（~几百 QPS 上限），对 200 线程饱和复现足够；更大规模用 wrk/ab（见 open-source-references）
 - wx.request 流式（enableChunked/onChunkReceived）属 S4 路线，本仓库止于 503 快速失败；小程序端约束已记入 open-source-references.md

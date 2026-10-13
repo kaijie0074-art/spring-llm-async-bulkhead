@@ -2,7 +2,9 @@ package com.resumeai.stability;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import com.resumeai.stability.config.TestLlmConfig;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.test.context.TestPropertySource;
 
@@ -15,10 +17,11 @@ import static org.junit.jupiter.api.Assertions.*;
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @TestPropertySource(properties = {
         "ai.mode=fixed",
-        "ai.llm.delay-ms=50",
-        "ai.llm.port=0",
+        "test.llm.delay-ms=50",
         "ai.pool.core=2", "ai.pool.max=4", "ai.pool.queue-capacity=20",
 })
+
+@Import(TestLlmConfig.class)
 class CircuitBreakerTest {
 
     @Autowired TestRestTemplate rest;

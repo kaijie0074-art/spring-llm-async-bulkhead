@@ -8,8 +8,9 @@ server:
 ai:
   mode: baseline      # 默认基线：`mvn spring-boot:run` 即复现线程池耗尽；fixed 见 scripts/
   llm:
-    port: 18081
-    delay-ms: 8000
+    base-url: ${LLM_BASE_URL:https://open.bigmodel.cn/api/paas/v4}
+    api-key: ${LLM_API_KEY:}
+    model: ${LLM_MODEL:glm-4-flash}
     connect-timeout-ms: 3000
     read-timeout-ms: 12000
     deferred-result-timeout-ms: 15000
