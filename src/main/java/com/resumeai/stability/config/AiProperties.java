@@ -17,6 +17,8 @@ public class AiProperties {
     private Mode mode = Mode.BASELINE;
     private final Llm llm = new Llm();
     private final Pool pool = new Pool();
+    private final Breaker breaker = new Breaker();
+
 
     public static class Llm {
         /** 真实 LLM API（OpenAI 兼容协议）地址。 */
@@ -27,6 +29,8 @@ public class AiProperties {
         private int connectTimeoutMs = 3000;
         private int readTimeoutMs = 12000;
         private int deferredResultTimeoutMs = 15000;
+        /** >0 时请求体带 max_tokens（延迟/成本控制旋钮）；0=不限制（供应商默认）。 */
+        private int maxTokens = 0;
 
         public String getBaseUrl() { return baseUrl; }
         public void setBaseUrl(String v) { this.baseUrl = v; }
@@ -40,6 +44,8 @@ public class AiProperties {
         public void setReadTimeoutMs(int v) { this.readTimeoutMs = v; }
         public int getDeferredResultTimeoutMs() { return deferredResultTimeoutMs; }
         public void setDeferredResultTimeoutMs(int v) { this.deferredResultTimeoutMs = v; }
+        public int getMaxTokens() { return maxTokens; }
+        public void setMaxTokens(int v) { this.maxTokens = v; }
     }
 
     public static class Pool {
@@ -50,14 +56,35 @@ public class AiProperties {
         public int getCore() { return core; }
         public void setCore(int core) { this.core = core; }
         public int getMax() { return max; }
-        public int getMax2() { return max; }
         public void setMax(int max) { this.max = max; }
         public int getQueueCapacity() { return queueCapacity; }
         public void setQueueCapacity(int v) { this.queueCapacity = v; }
+    }
+
+    /** S2 熔断参数——2026-10-14 研究后改为可配（对不同延迟量级的依赖，半开探测节奏必须可调）。 */
+    public static class Breaker {
+        private float failureRateThreshold = 50f;
+        private int slidingWindowSize = 8;
+        private int minimumNumberOfCalls = 4;
+        /** OPEN 态冷却等待（ms）。对 P50≈5-30s 的 LLM 依赖，过短会反复探测烧配额。 */
+        private int waitDurationInOpenStateMs = 2000;
+        private int permittedNumberOfCallsInHalfOpenState = 2;
+
+        public float getFailureRateThreshold() { return failureRateThreshold; }
+        public void setFailureRateThreshold(float v) { this.failureRateThreshold = v; }
+        public int getSlidingWindowSize() { return slidingWindowSize; }
+        public void setSlidingWindowSize(int v) { this.slidingWindowSize = v; }
+        public int getMinimumNumberOfCalls() { return minimumNumberOfCalls; }
+        public void setMinimumNumberOfCalls(int v) { this.minimumNumberOfCalls = v; }
+        public int getWaitDurationInOpenStateMs() { return waitDurationInOpenStateMs; }
+        public void setWaitDurationInOpenStateMs(int v) { this.waitDurationInOpenStateMs = v; }
+        public int getPermittedNumberOfCallsInHalfOpenState() { return permittedNumberOfCallsInHalfOpenState; }
+        public void setPermittedNumberOfCallsInHalfOpenState(int v) { this.permittedNumberOfCallsInHalfOpenState = v; }
     }
 
     public Mode getMode() { return mode; }
     public void setMode(Mode mode) { this.mode = mode; }
     public Llm getLlm() { return llm; }
     public Pool getPool() { return pool; }
+    public Breaker getBreaker() { return breaker; }
 }

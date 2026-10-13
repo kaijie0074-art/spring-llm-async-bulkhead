@@ -51,17 +51,30 @@ public class FixedOptimizeService {
 
     @PostConstruct
     void initBreaker() {
-        // 编程式构建（不用注解 AOP）：行为在测试里完全可控、无代理坑
+        // 编程式构建（不用注解 AOP）：行为在测试里完全可控、无代理坑。
+        // 参数自 ai.breaker.*（研究 2026-10-14：对 26s 级慢依赖，半开节奏必须随依赖量级可调）
+        AiProperties.Breaker bp = props.getBreaker();
         CircuitBreakerConfig config = CircuitBreakerConfig.custom()
-                .failureRateThreshold(50f)
-                .slidingWindowSize(8)
-                .minimumNumberOfCalls(4)
-                .waitDurationInOpenState(Duration.ofSeconds(2))
-                .permittedNumberOfCallsInHalfOpenState(2)
+                .failureRateThreshold(bp.getFailureRateThreshold())
+                .slidingWindowSize(bp.getSlidingWindowSize())
+                .minimumNumberOfCalls(bp.getMinimumNumberOfCalls())
+                .waitDurationInOpenState(Duration.ofMillis(bp.getWaitDurationInOpenStateMs()))
+                .permittedNumberOfCallsInHalfOpenState(bp.getPermittedNumberOfCallsInHalfOpenState())
                 .recordException(this::isLlmFailure)
                 .build();
         this.circuitBreaker = CircuitBreakerRegistry.of(config).circuitBreaker("llm");
+
+        // 超时分层告警（研究 Q3 发现）：deferred 超时只结束"用户等待"，不释放池线程——
+        // SimpleClientHttpRequestFactory 的 socket read 不可被中断，线程必钉到 read 超时。
+        // deferred <= read 时用户已 504 而资源仍被占用，需显式知情。
+        if (props.getLlm().getDeferredResultTimeoutMs() <= props.getLlm().getReadTimeoutMs()) {
+            log.warn("[fixed] 超时分层: deferred({}ms) <= read({}ms) —— 用户超时早于资源释放,池线程仍将占用至 read 超时(不可中断)",
+                    props.getLlm().getDeferredResultTimeoutMs(), props.getLlm().getReadTimeoutMs());
+        }
     }
+
+    /** 研究探针用：暴露熔断器（离线参数扫描断言配置生效）。 */
+    CircuitBreaker getCircuitBreaker() { return circuitBreaker; }
 
     private boolean isLlmFailure(Throwable t) {
         if (t instanceof RestClientResponseException rx) return rx.getStatusCode().value() >= 500 || rx.getStatusCode().value() == 429;

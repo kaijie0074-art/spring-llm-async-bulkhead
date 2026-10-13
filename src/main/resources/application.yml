@@ -14,10 +14,17 @@ ai:
     connect-timeout-ms: 3000
     read-timeout-ms: 12000
     deferred-result-timeout-ms: 15000
+    max-tokens: 0            # 0=不限制；>0 时请求带 max_tokens（延迟/成本旋钮）
   pool:
     core: 8
     max: 16
     queue-capacity: 50
+  breaker:                   # 研究后可配：对不同延迟量级的依赖需不同半开节奏
+    failure-rate-threshold: 50
+    sliding-window-size: 8
+    minimum-number-of-calls: 4
+    wait-duration-in-open-state-ms: 2000
+    permitted-number-of-calls-in-half-open-state: 2
 
 management:
   endpoints:

@@ -1,0 +1,47 @@
+[
+ {
+  "wait_ms": 2000,
+  "half_open": 2,
+  "recover_s": 50,
+  "requests": 21,
+  "first_200_after_recover_s": 27.3,
+  "degraded_after_recover": 0,
+  "wasted_upstream_calls_during_outage": 17
+ },
+ {
+  "wait_ms": 10000,
+  "half_open": 2,
+  "recover_s": 50,
+  "requests": 21,
+  "first_200_after_recover_s": 27.3,
+  "degraded_after_recover": 0,
+  "wasted_upstream_calls_during_outage": 8
+ },
+ {
+  "wait_ms": 30000,
+  "half_open": 2,
+  "recover_s": 50,
+  "requests": 27,
+  "first_200_after_recover_s": 48.3,
+  "degraded_after_recover": 7,
+  "wasted_upstream_calls_during_outage": 6
+ },
+ {
+  "wait_ms": 10000,
+  "half_open": 1,
+  "recover_s": 50,
+  "requests": 22,
+  "first_200_after_recover_s": 33.3,
+  "degraded_after_recover": 2,
+  "wasted_upstream_calls_during_outage": 7
+ },
+ {
+  "wait_ms": 10000,
+  "half_open": 5,
+  "recover_s": 50,
+  "requests": 23,
+  "first_200_after_recover_s": 27.2,
+  "degraded_after_recover": 3,
+  "wasted_upstream_calls_during_outage": 11
+ }
+]

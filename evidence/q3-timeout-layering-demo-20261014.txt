@@ -1,0 +1,5 @@
+用户侧: codes=[504, 504] ms=[15600, 15600] (t=15.6s)
+login during AI hang: 34ms
+t≈20s 新请求: 503 in 5ms  (503+毫秒级=池仍被钉住)
+t≈42s 新请求: 200 in 539ms
+结论: 用户 t=15.6s 全部 504；钉住窗口内新请求 503/5ms，上游返回后 200/539ms —— cancel(true) 不能释放阻塞的 socket read，线程必钉到 read 超时/上游返回

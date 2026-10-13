@@ -41,7 +41,9 @@ python3 loadtest/run.py --optimize 220 --login 4 --duration 25 --label fixed
 - [回归记录](docs/regression-records/线程池隔离-回归记录-20261013.md)（220 并发前后对比）
 - [评审意见](docs/reviews/R1-评审意见-20261013.md) / [采纳记录](docs/reviews/采纳记录.md) / [人工评审](docs/reviews/人工评审-代码走查-20261013.md)
 - [负责人验收](docs/acceptance.md) / [覆盖场景说明](docs/test-coverage.md)
+- [自主深潜研究 2026-10-14](docs/research/deep-dive-20261014.md)（7 问实验链：真实延迟分布 → 生成速率瓶颈 → 超时/熔断/池参数的数据驱动法则）
 - [CHANGELOG](CHANGELOG.md) / [任务地图](work/wayfinder-map.md)
+
 
 ## License
 

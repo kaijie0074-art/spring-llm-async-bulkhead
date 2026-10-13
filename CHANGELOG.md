@@ -1,5 +1,22 @@
 # CHANGELOG
 
+
+## [1.2.0] - 2026-10-14
+
+自主深潜研究（7 问实验链，[docs/research/deep-dive-20261014.md](docs/research/deep-dive-20261014.md)）：
+
+- **瓶颈结论**：glm-4-flash 生成速率 ≈16.4 tok/s（r=0.974）、输出长度非确定（同提示词
+  40–716 token）——质量保持的单调用延迟下限 = token×61ms（P50≈18–29s、P95≈48s），
+  工程手段只能改变失败速度，不能改变生成速度
+- **数据驱动配置法则**：read≥依赖 P95（12s 会把 50% 上游成功率压成 0.002% 用户成功，
+  熔断假宕机）；deferred≥read（cancel(true) 不能释放阻塞读，线程钉到 read 为止）；
+  熔断 wait 5–10s/半开 2（短 wait 纯烧探测配额，恢复下限=依赖 P50）；队列对慢依赖是
+  延迟化的失败；login P99 与池容量正交（全部 26–36ms）
+- **变更**：`ai.breaker.*` 五参数可配（原硬编码）；`ai.llm.max-tokens` 延迟/质量旋钮；
+  deferred≤read 启动告警；deferred 超时 cancel(true)+isSetOrExpired 守卫；删死代码 getMax2()
+- **研究工具**（scripts/research/）：probe_latency（真实延迟/并发探针）、fake_llm +
+  sweep_breaker/sweep_pool（离线确定性扫描）、demo_timeout_layering（超时分层演示）
+
 ## [1.1.0] - 2026-10-13
 
 移除内置假 LLM 服务，直连真实 API。

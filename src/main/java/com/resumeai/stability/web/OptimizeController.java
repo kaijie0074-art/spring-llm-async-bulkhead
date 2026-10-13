@@ -49,20 +49,27 @@ public class OptimizeController {
     }
 
     private DeferredResult<ResponseEntity<String>> deferred(String resumeId) {
-        Long timeoutMs = (long) props.getLlm().getDeferredResultTimeoutMs();
+        final Long timeoutMs = (long) props.getLlm().getDeferredResultTimeoutMs();
         DeferredResult<ResponseEntity<String>> dr = new DeferredResult<>(timeoutMs);
-        final DeferredResult<ResponseEntity<String>> handle = dr;
 
+        // 研究 Q3：deferred 超时只结束用户等待。SimpleClientHttpRequestFactory 的阻塞
+        // socket read 不可被线程中断 cancel 释放，池线程必钉到 read 超时——这里 cancel(true)
+        // 是尽力而为（至少让 exceptionally/thenAccept 短路、结果不再写回），资源上界仍由 read 决定。
+        final var future = fixed.optimizeAsync(resumeId);
 
         // 评审意见 #1：onTimeout/onCompletion 必须清理，防线程/回调泄漏
         dr.onTimeout(() -> {
-            log.warn("[fixed] deferred timeout resumeId={} thread={}", resumeId, Thread.currentThread().getName());
+            log.warn("[fixed] deferred timeout resumeId={} thread={} cancelled={}",
+                    resumeId, Thread.currentThread().getName(), future.cancel(true));
             dr.setErrorResult(ResponseEntity.status(HttpStatus.GATEWAY_TIMEOUT)
                     .body("{\"code\":\"AI_TIMEOUT\",\"msg\":\"排队超时，请稍后重试\"}"));
         });
         dr.onCompletion(() -> log.debug("[fixed] deferred completed resumeId={}", resumeId));
 
-        fixed.optimizeAsync(resumeId).thenAccept(outcome -> {
+        future.thenAccept(outcome -> {
+            if (dr.isSetOrExpired()) {
+                return; // 用户侧已超时：不再写回（线程仍占用至 read 超时，见上）
+            }
             HttpHeaders headers = new HttpHeaders();
             headers.set("Content-Type", "application/json");
             if (outcome.retryAfterSeconds() != null) {

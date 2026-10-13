@@ -32,8 +32,13 @@ final class LlmHttpRequests {
         if (props.getLlm().getApiKey() != null && !props.getLlm().getApiKey().isBlank()) {
             headers.setBearerAuth(props.getLlm().getApiKey());
         }
+        // max_tokens>0 时携带（延迟/成本控制旋钮，研究 Q7：输出长度是延迟的主导项）
         String body = "{\"model\":\"" + props.getLlm().getModel()
-                + "\",\"messages\":[{\"role\":\"user\",\"content\":\"请优化简历 " + resumeId + "\"}]}";
+                + "\",\"messages\":[{\"role\":\"user\",\"content\":\"请优化简历 " + resumeId + "\"}]"
+                + (props.getLlm().getMaxTokens() > 0
+                    ? ",\"max_tokens\":" + props.getLlm().getMaxTokens()
+                    : "")
+                + "}";
         return new HttpEntity<>(body, headers);
     }
 
