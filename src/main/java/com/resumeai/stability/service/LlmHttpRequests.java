@@ -38,6 +38,12 @@ final class LlmHttpRequests {
     }
 
     static String chatCompletionsUrl(AiProperties props) {
-        return props.getLlm().getBaseUrl().replaceAll("/+$", "") + "/v1/chat/completions";
+        String base = props.getLlm().getBaseUrl().replaceAll("/+$", "");
+        // base 已含版本段（如智谱 /api/paas/v4、/api/coding/paas/v4）时直接拼接；
+        // 无版本段（如 DeepSeek https://api.deepseek.com）按 OpenAI 惯例补 /v1
+        if (base.matches(".*(/v\\d+|/api)$") || base.endsWith("/chat/completions")) {
+            return base.endsWith("/chat/completions") ? base : base + "/chat/completions";
+        }
+        return base + "/v1/chat/completions";
     }
 }
